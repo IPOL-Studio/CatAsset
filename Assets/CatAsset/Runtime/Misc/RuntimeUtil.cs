@@ -33,6 +33,14 @@ namespace CatAsset.Runtime
             return path.Replace('\\', '/');
         }
 
+        /// <summary>
+        /// 将规范化后的路径转义编码为UnityWebRequest可识别的Uri格式
+        /// </summary>
+        private static string EncodeRegularUriPath(string path)
+        {
+            // AbsoluteUri不会转义路径中的 + 号，但在UnityWebRequest中 + 号会被解析为空格，所以要手动转义一下
+            return new Uri(path).AbsoluteUri.Replace("+", "%2B");
+        }
 
         /// <summary>
         /// 获取在只读区下的完整路径
@@ -41,10 +49,14 @@ namespace CatAsset.Runtime
         {
             string result = GetRegularPath(Path.Combine(Application.streamingAssetsPath, path));
             
-            if (isUwrPath && !result.Contains("file://"))
+            if (isUwrPath)
             {
                 //使用UnityWebRequest访问 统一加file://头
-                result = "file://" + result;
+                if (!result.Contains("file://"))
+                    result = "file://" + result;
+
+                //还要转义编码为UnityWebRequest可识别的Uri格式
+                result = EncodeRegularUriPath(result);
             }
             
             return result;
@@ -58,10 +70,14 @@ namespace CatAsset.Runtime
         {
             string result = GetRegularPath(Path.Combine(Application.persistentDataPath, path));
 
-            if (isUwrPath && !result.Contains("file://"))
+            if (isUwrPath)
             {
                 //使用UnityWebRequest访问 统一加file://头
-                result = "file://" + result;
+                if (!result.Contains("file://"))
+                    result = "file://" + result;
+
+                //还要转义编码为UnityWebRequest可识别的Uri格式
+                result = EncodeRegularUriPath(result);
             }
 
             return result;
@@ -72,7 +88,7 @@ namespace CatAsset.Runtime
         /// </summary>
         public static string GetRemotePath(string path)
         {
-            string result = GetRegularPath(Path.Combine(CatAssetUpdater.UpdateUriPrefix, path));
+            string result = EncodeRegularUriPath(GetRegularPath(Path.Combine(CatAssetUpdater.UpdateUriPrefix, path)));
             return result;
         }
 
